@@ -2,55 +2,46 @@ import subprocess
 import json
 import requests
 import traceback
+import boto3
+import time
 from paramiko import SSHClient
 import paramiko
+from time import sleep
+from util_functions import *
+from ollama_api_methods import *
+from boto_commands import params	
 instance_id = ''
 terminal_input = ''
 url = ''
 user_input = ''
-from util_functions import *
-from ollama_api_methods import *
-from time import sleep
+ec2 = boto3.resource('ec2')
+ec2client = boto3.client('ec2')
 try:
-
-	#initiating container 
-
-
-	result = subprocess.run(['sh containerinit.sh'], shell=True, text=True, capture_output=True)
 	
-	sleep(1)
-
-	output_dict = json.loads(result.stdout)
 	
-	print(result.stdout)
-
-	instance_list = output_dict.get('Instances')
-
-	instance_details = instance_list[0]
+	model_name = "gemma3:12b"
 	
-	instance_id = instance_details.get('InstanceId')
+	unique_name = str(time.time())
 	
-	describe_instances_command = 'aws ec2 describe-instances --instance-ids' + ' ' + instance_id
+	params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
 	
-	#getting public dns
+	#print(params)	
 	
-	result =subprocess.run([describe_instances_command], shell=True, capture_output=True, text=True)
+	instance = ec2.create_instances(**params)
 	
-	output_dict = json.loads(result.stdout)
+	instance = instance[0]
 	
-	reservations = output_dict.get('Reservations')
+	instance.wait_until_running()
 	
-	instances = reservations[0].get('Instances')
+	instance.load()
 	
-	instances_details = instances[0]
+	instance_id = instance.id
 	
-	publicDnsName = instances_details.get('PublicDnsName')
+	public_dns_name = instance.public_dns_name
 	
-	print(publicDnsName)
+	print(public_dns_name)
 	
-	#installing ollama + ssh'ing in
-	
-	sleep(30)
+	print(instance_id)
 	
 	client = SSHClient()
 	
@@ -58,7 +49,7 @@ try:
 	
 	print("attempting to form ssh connection")
 	
-	client.connect(publicDnsName, username = 'ubuntu', key_filename = 'key.pem')
+	client.connect(public_dns_name, username = 'ubuntu', key_filename = 'key.pem')
 	
 	print('starting install command')
 	
@@ -80,70 +71,44 @@ try:
 	sleep(5)
 
 	# Check if Ollama is running from inside EC2 (localhost works, not 0.0.0.0)
-	run_cmd("curl -s http://localhost:11434 || echo 'Ollama not listening'", client)
+	run_cmd("curl -s http://localhost:11434 || echo 'Ollama not listening'", client)	
 	
-
-		#slightly hacky way of making sure that ollama watches port 11434 for requests from all IPs as opposed to only just localhost
+	base_url = 'http://' + public_dns_name + ":11434" 
 	
-	sleep(10)
+	model_pull = {"name": model_name, "stream": False}
 	
-	
-	base_url = 'http://' + publicDnsName + ":11434" 
-	
-	model_name = {"name": "orca-mini", "stream": True}
-	
-	pull_response = pull_model(model_name, base_url)
+	pull_response = pull_model(model_pull, base_url)
 	print("printing response")
 	
 	print(pull_response)
 	
-	model_data = {"model": "orca-mini", "prompt": "describe the mating habits of the stellar's sea lion", "stream": False}
+	
 	
 	
 	while True:
 		user_input = input("query: ")
 		if user_input == 'quit':
 			break
-		model_data = {"model": "orca-mini", "prompt": user_input, "stream": False}
+		model_data = {"model": model_name, "prompt": user_input, "stream": False}
 		response = generate_response(model_data, base_url)
-		print(response["response"])
+		print(response)
+		eval_time = response.get('eval_duration')
+		eval_time_seconds = (eval_time/1000000000)
+		token_count = response.get('eval_count')
+		time_per_token = token_count / eval_time_seconds
+		print("time per token: " + str(time_per_token))
+		print("eval time: " + str(eval_time_seconds))
+		print("token count: " + str(token_count))
+		print(response['response'])
 	
 	
-	#_stdin, _stdout,_stderr = client.exec_command("curl -fsSL https://ollama.cominstall.sh | sh", get_pty=True)
-	#print(_stdout.read().decode())
-	#print('installed ollama')
-	#then use api from here. for now, i'm going to use hardcoded vals. sue me. 
-	#_stdin, _stdout, _stderr = client.exec_command("ollama run llama3", get_pty=True)
-	#print('installed llama')
-	#_stdin, _stdout, _stderr = client.exec_command("provide a recipe for scrambled eggs", get_pty=True)
-	#print('working on command')
-	#print(_stdout.read().decode())
-	#_stdin.close()
-	#client.close()
-	terminate_instance(instance_id)
+	print(ec2client.terminate_instances(InstanceIds=[instance_id]))
 	
 	
-	
+except KeyboardInterrupt:
+	print(ec2client.terminate_instances([instance_id]))
 	
 except Exception as e: #terminating container when done
 	print(traceback.format_exc())
-	terminate_instance(instance_id)
+	print(ec2client.terminate_instances(InstanceIds=[instance_id]))
 	
-	
-
-	
-	
-	
-
-
-
-
-
-
-#print(result.stdout)
-
-#result = subprocess.run(['aws ec2 describe-instances'], shell=True, capture_output=True, text=True)
-
-#poopthondict = json.loads(result.stdout)
-
-#print(json.dumps(poopthondict))
