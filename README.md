@@ -17,28 +17,22 @@ With one python script executed from the command line, it sets up an AWS EC2 ins
 Run
 1) run 'pip requirements.txt' in a terminal instance in this project's folder
 2) run 'aws configure' in the same terminal
-3) create an aws security group. give it
->outbound rules
-- All traffic to destination 0.0.0.0/0. you'll get a warning message. unless you really know what you're doing, you can ignore it
->inbound rules
-- SSH from 'My IP' (source type dropdown menu)
-- Custom TCP (type dropdown menu) Port range 11434  from 'My IP'
-Note the security group ID, you'll need it later
-5) move your aws key into the folder. name it 'key.pem'
-6) open the file 'boto_commands.py'. Ctrl+F 'groups'. Change the value inside the [''] to the security group ID from step 3
-7) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
-Configure
-There 
+3) move your aws key into the folder. use the name for the key that you used to generate it
+4) change the 'key name' value in boto_commands to your key name
+5) configure the values for model name and desired amazon instance near the top of the project
+6) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
 
 **TODO**
 
-- make instance/model type more easily configurable
+- ~~make instance/model type more easily configurable~~ [done]
+- allow all configurable values to be given as parametres when main function is called
 - directly include openwebui
+- ~~add automatic security group management~~ [done]
 
 **Future Features**
 
 - create a python library?
-- open an issue if you think you've noticed anything cool and i'll try it out
+- open an issue if you think you've thought of anything cool and i'll think about it
 
 **Pre-requisites**
 
@@ -50,4 +44,5 @@ https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
 
 **Helpful but not absolutely essential**
 - An AWS GPU quota. Gives you access to EC2 instances with GPUs, which make token generation about 5x faster (from my experiments)
-https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html 
+https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html
+- If you already have an AWS account that you use for something else, I recommend making a seperate IAMS role for this project and using it only for this. If you have any pre-existing security rules, they might clash with this project's auto-management system. 
