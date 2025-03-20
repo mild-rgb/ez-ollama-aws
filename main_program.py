@@ -1,4 +1,3 @@
-import subprocess
 import json
 import requests
 import traceback
@@ -14,6 +13,7 @@ instance_id = ''
 terminal_input = ''
 url = ''
 user_input = ''
+security_group_id = ''
 ec2 = boto3.resource('ec2')
 ec2client = boto3.client('ec2')
 try:
@@ -21,9 +21,27 @@ try:
 	
 	model_name = "gemma3:12b"
 	
+	instance_type = "c5.2xlarge"
+	
 	unique_name = str(time.time())
 	
+	local_ip = get_local_ip()
+	print(local_ip)
+	security_group_list = get_security_groups_with_inbound_rule(local_ip)
+	print(security_group_list)
+	
+	if len(security_group_list) == 0:
+		vpc_id = get_vpc_id()
+		security_group_id = create_and_configure_security_group(unique_name, vpc_id, local_ip)
+	else:
+		security_group_id = security_group_list[0]['GroupId']		
+	
+	
+	
 	params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
+	params['NetworkInterfaces'][0]['Groups'] = [security_group_id]
+	params['InstanceType'] = instance_type
+	
 	
 	#print(params)	
 	
@@ -49,7 +67,7 @@ try:
 	
 	print("attempting to form ssh connection")
 	
-	client.connect(public_dns_name, username = 'ubuntu', key_filename = 'key.pem')
+	client.connect(public_dns_name, username = 'ubuntu', key_filename = 'john key.pem')
 	
 	print('starting install command')
 	
@@ -64,7 +82,7 @@ try:
 	run_cmd("pkill -f 'ollama'", client)
 
 	# Start Ollama on 0.0.0.0:11434
-	# NOTE: we use a separate shell to launch it in background without PTY issues
+	# NOTE: use a separate shell to launch it in background without PTY issues
 	run_cmd("nohup bash -c 'OLLAMA_HOST=0.0.0.0:11434 ollama serve > ollama.log 2>&1  &'", client)
 
 	# Wait a few seconds to let server start
@@ -74,6 +92,9 @@ try:
 	run_cmd("curl -s http://localhost:11434 || echo 'Ollama not listening'", client)	
 	
 	base_url = 'http://' + public_dns_name + ":11434" 
+	
+	print("you can use this url as an api endpoint if you want")
+	print(base_url)
 	
 	model_pull = {"name": model_name, "stream": False}
 	
@@ -111,4 +132,12 @@ except KeyboardInterrupt:
 except Exception as e: #terminating container when done
 	print(traceback.format_exc())
 	print(ec2client.terminate_instances(InstanceIds=[instance_id]))
+	
+	
+	'''
+	 
+ 
+ groups = get_security_groups_with_inbound_rule(ip)
+ print(groups)
+ '''
 	
