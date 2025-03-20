@@ -37,6 +37,7 @@ There
 - open an issue if you think you've noticed anything cool and i'll try it out
 
 **Pre-requisites**
+
 An AWS account and a key.
 - How to get an AWS account?
 https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html
