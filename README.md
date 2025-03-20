@@ -7,11 +7,13 @@ With one python script executed from the command line, it sets up an AWS EC2 ins
 
 
 **Current Features** 
+
 - initialisation and installation of gemma3-12b on a c4.2xlarge instance through just one terminal command
 - prompt model and recieve responses from the command line
 - automatically shuts down instance when program is closed [no eating ramen for a week because you forgot to shut down your instance before going on holiday]
 
 **How to use / configure**
+
 Run
 1) run 'pip requirements.txt' in a terminal instance in this project's folder
 2) run 'aws configure' in the same terminal
@@ -29,10 +31,12 @@ Configure
 There 
 
 **TODO**
+
 - make instance/model type more easily configurable
 - directly include openwebui
 
 **Future Features**
+
 - create a python library?
 - open an issue if you think you've noticed anything cool and i'll try it out
 
