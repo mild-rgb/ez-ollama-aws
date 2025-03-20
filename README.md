@@ -42,6 +42,7 @@ An AWS account and a key.
 https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html
 - How to get a key? 
 https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+
 **Helpful but not absolutely essential**
 - An AWS GPU quota. Gives you access to EC2 instances with GPUs, which make token generation about 5x faster (from my experiments)
 https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html 
