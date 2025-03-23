@@ -14,25 +14,30 @@ terminal_input = ''
 url = ''
 user_input = ''
 security_group_id = ''
-ec2 = boto3.resource('ec2')
-ec2client = boto3.client('ec2')
+resource = boto3.resource('ec2', region_name = 'eu-north-1')
+client = boto3.client('ec2', region_name = 'eu-north-1')
 try:
 	
-	
+	#configs - make these be taken through cmd line
 	model_name = "gemma3:12b"
 	
 	instance_type = "c5.2xlarge"
 	
+	key_name = 'laptop_key'
+	
+	
+	
 	unique_name = str(time.time())
 	
 	local_ip = get_local_ip()
+	
 	print(local_ip)
-	security_group_list = get_security_groups_with_inbound_rule(local_ip)
+	security_group_list = get_security_groups_with_inbound_rule(local_ip, client)
 	print(security_group_list)
 	
 	if len(security_group_list) == 0:
-		vpc_id = get_vpc_id()
-		security_group_id = create_and_configure_security_group(unique_name, vpc_id, local_ip)
+		vpc_id = get_vpc_id(client)
+		security_group_id = create_and_configure_security_group(unique_name, vpc_id, local_ip, client)
 	else:
 		security_group_id = security_group_list[0]['GroupId']		
 	
@@ -41,11 +46,12 @@ try:
 	params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
 	params['NetworkInterfaces'][0]['Groups'] = [security_group_id]
 	params['InstanceType'] = instance_type
+	params['KeyName'] = key_name
 	
 	
 	#print(params)	
 	
-	instance = ec2.create_instances(**params)
+	instance = resource.create_instances(**params)
 	
 	instance = instance[0]
 	
@@ -61,45 +67,50 @@ try:
 	
 	print(instance_id)
 	
-	client = SSHClient()
+	waiter = client.get_waiter('instance_status_ok')
 	
-	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+	sshclient = SSHClient()
+	
+	sshclient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	
 	print("attempting to form ssh connection")
 	
-	client.connect(public_dns_name, username = 'ubuntu', key_filename = 'john key.pem')
+	key_filename = key_name + ".pem"
+	
+	sshclient.connect(public_dns_name, username = 'ubuntu', key_filename = key_filename)
 	
 	print('starting install command')
 	
 	
-	run_cmd("curl -fsSL https://ollama.com/install.sh | sh", client)
+	run_cmd("curl -fsSL https://ollama.com/install.sh | sh", sshclient)
 
 	# Stop systemd service and disable auto-start
-	run_cmd("sudo systemctl stop ollama", client)
-	run_cmd("sudo systemctl disable ollama", client)
+	run_cmd("sudo systemctl stop ollama", sshclient)
+	run_cmd("sudo systemctl disable ollama", sshclient)
 
 	# Kill any lingering processes
-	run_cmd("pkill -f 'ollama'", client)
+	run_cmd("pkill -f 'ollama'", sshclient)
 
 	# Start Ollama on 0.0.0.0:11434
 	# NOTE: use a separate shell to launch it in background without PTY issues
-	run_cmd("nohup bash -c 'OLLAMA_HOST=0.0.0.0:11434 ollama serve > ollama.log 2>&1  &'", client)
+	run_cmd("nohup bash -c 'OLLAMA_HOST=0.0.0.0:11434 ollama serve > ollama.log 2>&1  &'", sshclient)
 
 	# Wait a few seconds to let server start
 	sleep(5)
 
 	# Check if Ollama is running from inside EC2 (localhost works, not 0.0.0.0)
-	run_cmd("curl -s http://localhost:11434 || echo 'Ollama not listening'", client)	
+	run_cmd("curl -s http://localhost:11434 || echo 'Ollama not listening'", sshclient)	
 	
 	base_url = 'http://' + public_dns_name + ":11434" 
 	
-	print("you can use this url as an api endpoint if you want")
-	print(base_url)
+	print("pulling model")
+	
 	
 	model_pull = {"name": model_name, "stream": False}
 	
 	pull_response = pull_model(model_pull, base_url)
-	print("printing response")
+	print("you can use this api endpoint if you want")
+	print(base_url)
 	
 	print(pull_response)
 	
@@ -123,15 +134,15 @@ try:
 		print(response['response'])
 	
 	
-	print(ec2client.terminate_instances(InstanceIds=[instance_id]))
+	print(client.terminate_instances(InstanceIds=[instance_id]))
 	
 	
 except KeyboardInterrupt:
-	print(ec2client.terminate_instances([instance_id]))
+	print(client.terminate_instances([instance_id]))
 	
 except Exception as e: #terminating container when done
 	print(traceback.format_exc())
-	print(ec2client.terminate_instances(InstanceIds=[instance_id]))
+	print(client.terminate_instances(InstanceIds=[instance_id]))
 	
 	
 	'''

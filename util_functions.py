@@ -23,17 +23,16 @@ def get_local_ip():
  	print("you're not connected to the internet or aws is down")
  	
 
-def get_vpc_id(vpc_id=None):
-    ec2 = boto3.client('ec2')
-    
+def get_vpc_id(client, vpc_id=None):
+    #ec2 = boto3.client('ec2')
     # If a VPC ID is provided, describe that specific VPC
     if vpc_id:
-        response = ec2.describe_vpcs(
+        response = client.describe_vpcs(
             VpcIds=[vpc_id]
         )
     else:
         # Otherwise, get the default VPC by filtering on is-default = true
-        response = ec2.describe_vpcs(
+        response = client.describe_vpcs(
             Filters=[{
                 'Name': 'is-default',
                 'Values': ['true']
@@ -51,12 +50,12 @@ def get_vpc_id(vpc_id=None):
     return selected_vpc['VpcId']
     
     
-def create_and_configure_security_group(unique_name, vpc_id, local_ip):
+def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
     # Initialize the EC2 client
-    ec2 = boto3.client('ec2')
+    #ec2 = boto3.client('ec2')
     
     # Create the security group with a description and a friendly name
-    response = ec2.create_security_group(
+    response = client.create_security_group(
         Description='Security group allowing SSH and custom TCP traffic',
         GroupName=unique_name,
         VpcId=vpc_id
@@ -83,7 +82,7 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip):
     ]
     
     # Authorize the inbound rules on the security group
-    ec2.authorize_security_group_ingress(
+    client.authorize_security_group_ingress(
         GroupId=security_group_id,
         IpPermissions=ip_permissions
     )
@@ -92,8 +91,8 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip):
     return security_group_id
 
 
-def get_security_groups_with_inbound_rule(local_ip):
-    ec2 = boto3.client('ec2')
+def get_security_groups_with_inbound_rule(local_ip, client):
+    #ec2 = boto3.client('ec2')
     security_groups = []
     next_token = None
 
@@ -110,7 +109,7 @@ def get_security_groups_with_inbound_rule(local_ip):
         if next_token:
             params['NextToken'] = next_token
 
-        response = ec2.describe_security_groups(**params)
+        response = client.describe_security_groups(**params)
         print(response)
         security_groups.extend(response['SecurityGroups'])
 
