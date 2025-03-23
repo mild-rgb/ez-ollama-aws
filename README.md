@@ -42,14 +42,3 @@ Run
 
 - create a python library?
 - open an issue if you think you've thought of anything cool and i'll think about it
-
-**Pre-requisites**
-
-An AWS account and a key.
-- How to get an AWS account?
-
-- How to get a key? 
-
-
-**Helpful but not absolutely essential**
-- If you already have an AWS account that you use for something else, I recommend making a seperate IAMS role for this project and using it only for this. If you have any pre-existing security rules, they might clash with this project's auto-management system. 
