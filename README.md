@@ -16,10 +16,9 @@ With one python script executed from the command line, it sets up an AWS EC2 ins
 
 Run
 1) run 'pip requirements.txt' in a terminal instance in this project's folder
-2) run 'aws configure' in the same terminal
-3) move your aws key into the folder. use the name for the key that you used to generate it
-4) change the 'key name' value in boto_commands to your key name
-5) configure the values for model name and desired amazon instance near the top of the project
+2) run 'aws configure' in the same terminal. insert your access keys
+4) move the .pem file that you made while setting up your access keys into the folder. use the name for the key that you used to generate it
+5) set values for instance_type, key_name, and model_name in main_program.py. default values are model_name = "gemma3:12b", instance_type = "c5.2xlarge", and key_name = 'laptop_key'
 6) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
 
 **TODO**
@@ -27,6 +26,7 @@ Run
 - ~~make instance/model type more easily configurable~~ [done]
 - allow all configurable values to be given as parametres when main function is called
 - directly include openwebui
+- use a more secure way of connecting to ec2 - aws warns against my current approach
 - ~~add automatic security group management~~ [done]
 
 **Future Features**
@@ -36,7 +36,7 @@ Run
 
 **Pre-requisites**
 
-An AWS account and a key.
+An AWS account a key.
 - How to get an AWS account?
 https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html
 - How to get a key? 
