@@ -14,12 +14,18 @@ With one python script executed from the command line, it sets up an AWS EC2 ins
 
 **How to use / configure**
 
+Configure 
+0) if you already have an AWS account, consider setting up an IAM role solely for this project. it will automatically parse and create security roles, which may clash with whatever you already have running
+1) create an AWS account (helpful link here - https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
+2) set up access keys and make a note of them (https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+3) create a key pair (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html#having-ec2-create-your-key-pair)
+4) run 'aws configure' in the same terminal. insert your access keys.
+5) move the .pem file that you made while setting up your access keys into the folder. use the name for the key filename that you used to generate it
+6) set values for instance_type, key_name, and model_name in main_program.py. default values are model_name = "gemma3:12b", instance_type = "c5.2xlarge", and key_name = 'laptop_key'
+7) [optional but strongly recommended for better generation speeds] get a quota increase to allow you to use instances with GPUs (https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html)
+
 Run
-1) run 'pip requirements.txt' in a terminal instance in this project's folder
-2) run 'aws configure' in the same terminal. insert your access keys
-4) move the .pem file that you made while setting up your access keys into the folder. use the name for the key that you used to generate it
-5) set values for instance_type, key_name, and model_name in main_program.py. default values are model_name = "gemma3:12b", instance_type = "c5.2xlarge", and key_name = 'laptop_key'
-6) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
+1) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
 
 **TODO**
 
@@ -36,13 +42,11 @@ Run
 
 **Pre-requisites**
 
-An AWS account a key.
+An AWS account and a key.
 - How to get an AWS account?
-https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html
+
 - How to get a key? 
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+
 
 **Helpful but not absolutely essential**
-- An AWS GPU quota. Gives you access to EC2 instances with GPUs, which make token generation about 5x faster (from my experiments)
-https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html
 - If you already have an AWS account that you use for something else, I recommend making a seperate IAMS role for this project and using it only for this. If you have any pre-existing security rules, they might clash with this project's auto-management system. 
