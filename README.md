@@ -15,6 +15,8 @@ With one python script executed from the command line, it sets up an AWS EC2 ins
 **How to use / configure**
 
 Configure 
+
+
 0) if you already have an AWS account, consider setting up an IAM role solely for this project. it will automatically parse and create security roles, which may clash with whatever you already have running
 1) create an AWS account (helpful link here - https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
 2) set up access keys and make a note of them (https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
@@ -25,6 +27,7 @@ Configure
 7) [optional but strongly recommended for better generation speeds] get a quota increase to allow you to use instances with GPUs (https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html)
 
 Run
+
 1) from the terminal, run 'python3 main_program.py'. do not use '&' afterwards as it'll make terminating the EC2 instance difficult (you'll only have to log onto AWS but that's annoying)
 
 **TODO**
