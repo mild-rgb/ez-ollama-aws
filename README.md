@@ -34,7 +34,7 @@ Run
 
 - ~~make instance/model type more easily configurable~~ [done]
 - allow all configurable values to be given as parametres when main function is called
-- directly include openwebui
+- directly include openwebui [set up reverse proxy on localhost to handle communication with aws]
 - use a more secure way of connecting to ec2 - aws warns against my current approach [update - implement ec2 secure connect]
 - investigate using spot instances [possibly have user define a range of acceptable instances or give some model parametres and auto match a range?]
 - ~~add automatic security group management~~ [done]
