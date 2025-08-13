@@ -9,22 +9,24 @@ from time import sleep
 from util_functions import *
 from ollama_api_methods import *
 from boto_commands import params
-from start_ui import start_container, stop_container	
+
+resource = boto3.resource('ec2', region_name = 'eu-north-1')
+client = boto3.client('ec2', region_name = 'eu-north-1')
 instance_id = ''
-terminal_input = ''
-url = ''
-user_input = ''
 security_group_id = ''
 resource = boto3.resource('ec2', region_name = 'eu-north-1')
 client = boto3.client('ec2', region_name = 'eu-north-1')
 try:
 	
 	#configs - make these be taken through cmd line
-	model_name = "qwq"
 	
-	instance_type = "g4dn.2xlarge"
-
-	key_name = "john key"	
+	instance_type = "g6.xlarge"
+	
+	ami_id = "ami-0c46fc11370489f11"
+	
+	key_name = "john key"
+	
+	
 	
 	unique_name = str(time.time())
 	
@@ -46,6 +48,7 @@ try:
 	params['NetworkInterfaces'][0]['Groups'] = [security_group_id]
 	params['InstanceType'] = instance_type
 	params['KeyName'] = key_name
+	params['ImageId'] = ami_id
 	
 	
 	#print(params)	
@@ -62,9 +65,9 @@ try:
 	
 	public_dns_name = instance.public_dns_name
 	
-	print(public_dns_name)
+	print("use this for openwebui")
 	
-	print(instance_id)
+	print(public_dns_name)
 	
 	sleep(10)
 	
@@ -113,56 +116,17 @@ try:
 	print("you can use this api endpoint if you want")
 	print(base_url)
 	
-	start_container(base_url)
-	
 	print(pull_response)
 	
-	
-	
-	input("type anything to close the instance")
-	
+	input("type anything to close the container")
 	
 	print(client.terminate_instances(InstanceIds=[instance_id]))
-	stop_container()
 	
 	
-	
-	
-	
-	'''
-	while True:
-		user_input = input("query: ")
-		if user_input == 'quit':
-			break
-		model_data = {"model": model_name, "prompt": user_input, "stream": False}
-		response = generate_response(model_data, base_url)
-		print(response)
-		eval_time = response.get('eval_duration')
-		eval_time_seconds = (eval_time/1000000000)
-		token_count = response.get('eval_count')
-		time_per_token = token_count / eval_time_seconds
-		print("time per token: " + str(time_per_token))
-		print("eval time: " + str(eval_time_seconds))
-		print("token count: " + str(token_count))
-		print(response['response'])
-	
-	
-	print(client.terminate_instances(InstanceIds=[instance_id]))
-	'''
-	
-	
-except KeyboardInterrupt:
-	print(client.terminate_instances(InstanceIds=[instance_id]))
 	
 except Exception as e: #terminating container when done
 	print(traceback.format_exc())
 	print(client.terminate_instances(InstanceIds=[instance_id]))
 	
-	
-	'''
-	 
- 
- groups = get_security_groups_with_inbound_rule(ip)
- print(groups)
- '''
-	
+
+

@@ -1,0 +1,19 @@
+curl --location 'http://ec2-13-60-168-226.eu-north-1.compute.amazonaws.com:11434/api/pull' \
+--data '{
+    "name": "orca-mini",
+    "stream": false
+}'
+
+
+curl --location 'http://ec2-51-21-196-143.eu-north-1.compute.amazonaws.com:11434/api/pull' \
+--data '{
+    "name": "orca-mini",
+    "stream": true
+}'
+{"status":"success"}me@I:~$ curl --location 'http://ec2-13-60-168-226.eu-north-1.compute.amazonaws.com:11434/api/pull' --data '{
+    "name": "dummy-model-bass-slut-random-7",
+    "stream": false
+}'
+{"error":"pull model manifest: file does not exist"}
+
+

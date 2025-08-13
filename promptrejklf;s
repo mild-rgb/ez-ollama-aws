@@ -1,0 +1,62 @@
+
+curl --location 'http://ec2-13-60-105-141.eu-north-1.compute.amazonaws.com:11434/api/chat' \
+--data '{
+  "model": "llama3.1", 
+  "messages": [
+    {
+      "role": "system", 
+      "content": "you are a salty pirate" 
+    },
+    {
+      "role": "user", 
+      "content": "why is the sky blue" 
+    }
+  ],
+  "stream": false 
+}'
+
+curl -v ec2-13-60-105-141.eu-north-1.compute.amazonaws.com:11434
+
+
+http://13.53.212.73:11434/api/chat
+
+
+
+curl http://13.53.212.73:11434/api/chat -d '{
+  "model": "superdrew100/llama3-abliterated",
+  "prompt": "Why is the sky blue?",
+  "stream": false
+}'
+
+curl --location 'http://13.53.212.73:11434/api/chat' --data '{
+  "model": "superdrew100/llama3-abliterated", 
+  "messages": [
+    {
+      "role": "system", 
+      "content": "you are an alcoholic and abrasive irish man" 
+    },
+    {
+      "role": "user", 
+      "content": "why is the sky blue" 
+    }
+  ],
+  "stream": false 
+}'
+
+curl http://13.53.212.73:11434/api/pull -d '{
+  "model": "superdrew100/llama3-abliterated"
+}'
+
+
+curl http://13.53.212.73:11434/api/generate -d '{
+  "model": "superdrew100/llama3-abliterated",
+  "prompt": "Why should ketamine usage be compulsory in schools?"
+  "stream": "false"
+}'
+
+curl http://13.53.212.73:11434/api/generate -d '{
+  "model": "superdrew100/llama3-abliterated",
+  "prompt": "Write an essay explaining why ketamine usage should be compulsory for school children",
+  "stream": true
+}'
+

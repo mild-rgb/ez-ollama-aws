@@ -1,47 +1,10 @@
 import json
-import os
 import requests
 import boto3
 from requests import get
 import time
 import shlex
-
-
-class JsonHandler:
-    _instance = None
-
-    def __new__(cls, filename="values.json"):
-        if cls._instance is None:
-            cls._instance = super(JsonHandler, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self, filename="data.json"):
-        if self._initialized:
-            return  # Avoid reinitializing on repeated calls
-        self.filename = filename
-        self.data = self._load_data()
-        self._initialized = True
-
-    def _load_data(self):
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, "r") as f:
-                    return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-        return {}
-
-    def _save_data(self):
-        with open(self.filename, "w") as f:
-            json.dump(self.data, f)
-
-    def get(self, key, default=None):
-        return self.data.get(key, default)
-
-    def set(self, key, value):
-        self.data[key] = value
-        self._save_data() 
+    
 
 def get_local_ip():
  try:
@@ -204,8 +167,11 @@ ebs_id = ''
 
 ami_id = ''
 
-automountscript = """#!/bin/bash
-device="/dev/$(lsblk -ndo NAME,SIZE | grep '100G' | awk '{print $1}')p1"
+automountscript = """
+#!/bin/bash
+
+device=/dev/$(lsblk | grep '100G' | awk '{print $1}')
+
 # Check if the device is mounted
 if findmnt -nr -o target -S "$device" > /dev/null; then
     exit 0
@@ -214,7 +180,8 @@ else
 fi
 """
 
-startuiscript = """#!/bin/bash
+startuiscript = """
+#!/bin/bash
 systemctl restart docker.service && docker run -d --network=host -v open-webui:/app/backend/data -e OLLAMA_BASE_URL=http://127.0.0.1:11434 --name open-webui --restart always ghcr.io/open-webui/open-webui:main
 """
 
@@ -292,12 +259,8 @@ class RunCMD:
         error = stderr.read().decode()
         print("Output:", output)
         print("Error:", error)
-        return error    
+        return error
 
-    def make_exec(self, absolute_path, filename, content):
-        self.make_file_and_write_in(absolute_path, filename, content)
-        self.__run_cmd('sudo chmod +x ' + absolute_path + filename)
-        
 
     def make_file_and_write_in(self, absolute_path, filename, content=''):
         command = 'cd / && cd ' + absolute_path + ' && sudo touch ' + filename
@@ -309,8 +272,8 @@ class RunCMD:
         self.__run_cmd(command) 
 
     def __overwrite_text_into_file(self, text, filename, absolute_path):
-        quoted_text = shlex.quote(text)
-        command = f"cd / && cd {absolute_path} && echo {quoted_text} | sudo tee {filename} >/dev/null"
+        escaped_text = shlex.quote(text)
+        command = f"cd / && cd {absolute_path} && echo {escaped_text} | sudo tee {filename} >/dev/null"
         self.__run_cmd(command)
 
     def overwrite_systemd_file(self, filename, content):

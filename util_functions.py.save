@@ -1,47 +1,10 @@
 import json
-import os
 import requests
 import boto3
 from requests import get
 import time
-import shlex
 
-
-class JsonHandler:
-    _instance = None
-
-    def __new__(cls, filename="values.json"):
-        if cls._instance is None:
-            cls._instance = super(JsonHandler, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self, filename="data.json"):
-        if self._initialized:
-            return  # Avoid reinitializing on repeated calls
-        self.filename = filename
-        self.data = self._load_data()
-        self._initialized = True
-
-    def _load_data(self):
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, "r") as f:
-                    return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-        return {}
-
-    def _save_data(self):
-        with open(self.filename, "w") as f:
-            json.dump(self.data, f)
-
-    def get(self, key, default=None):
-        return self.data.get(key, default)
-
-    def set(self, key, value):
-        self.data[key] = value
-        self._save_data() 
+    
 
 def get_local_ip():
  try:
@@ -99,22 +62,14 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
             'IpProtocol': 'tcp',
             'FromPort': 22,
             'ToPort': 22,
-            'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+            'IpRanges': [{'CidrIp': '0.0.0.0/0'}]  #
         },
         {
             'IpProtocol': 'tcp',
             'FromPort': 8080,
             'ToPort': 8080,
-            'IpRanges': [{'CidrIp': local_ip}]
-        },
-	 {
-            'IpProtocol': 'tcp',
-            'FromPort': 3000,
-            'ToPort': 3000,
-            'IpRanges': [{'CidrIp': local_ip}]
+            'IpRanges': [{'CidrIp': '0.0.0.0/0'}] #change this to local ip when in prod
         }
-
-
     ]
     
     # Authorize the inbound rules on the security group
@@ -128,6 +83,7 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
 
 
 def get_security_groups_with_inbound_rule(local_ip, client):
+    #ec2 = boto3.client('ec2')
     security_groups = []
     next_token = None
 
@@ -162,11 +118,10 @@ def create_ebs_disk(client):
 	)
 	diskid = response.get('VolumeId')
 	return diskid
-
-
+    	
 
 format_and_mount =  """
-DEVICE=/dev/$(lsblk | grep '100G' | awk '{print $1}')&&
+DEVICE=/dev/nvme1n1 && 
 sudo udevadm settle &&
 sleep 5 &&
 sudo wipefs -af $DEVICE &&
@@ -181,69 +136,11 @@ sudo mount ${DEVICE}p1 /home/ubuntu/mnt
 
 install_ollama = 'curl -fsSL https://ollama.com/install.sh | sh'
 
-install_docker = """sudo apt update && \
-sudo apt install -y apt-transport-https ca-certificates curl software-properties-common && \
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
-sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-sudo apt update && \
-apt-cache policy docker-ce && \
-sudo apt install -y docker-ce
-"""
-
+install_docker ='sudo apt update && sudo apt install apt-transport-https ca-certificates curl software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && sudo apt update && apt-cache policy docker-ce && sudo apt install docker-ce'
 
 go_to_systemd = 'cd . && cd ../../etc/systemd/system'
 
-docker_newloc = """
-{
-  "data-root": "/home/ubuntu/mnt/docker_stuff" 
-}
-"""
-
-ebs_id = ''
-
-ami_id = ''
-
-automountscript = """#!/bin/bash
-device="/dev/$(lsblk -ndo NAME,SIZE | grep '100G' | awk '{print $1}')p1"
-# Check if the device is mounted
-if findmnt -nr -o target -S "$device" > /dev/null; then
-    exit 0
-else
-    mount "$device" /home/ubuntu/mnt && touch /home/ubuntu/scripts/mounted
-fi
-"""
-
-startuiscript = """#!/bin/bash
-systemctl restart docker.service && docker run -d --network=host -v open-webui:/app/backend/data -e OLLAMA_BASE_URL=http://127.0.0.1:11434 --name open-webui --restart always ghcr.io/open-webui/open-webui:main
-"""
-
-
-automount = """
-[Unit]
-Description=Mount Device Script
-After=network.target
-
-[Service]
-ExecStart=/home/ubuntu/scripts/mountscript.sh
-Restart=on-failure
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-"""
-startui = """
-[Unit]
-Description=start ui script
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/ubuntu/scripts/startuiscript.sh
-
-[Install]
-WantedBy=multi-user.target
-"""
+install_webui = 'sudo docker pull ghcr.io/open-webui/open-webui:main'
 
 ollama_service = """
 [Unit]
@@ -292,25 +189,14 @@ class RunCMD:
         error = stderr.read().decode()
         print("Output:", output)
         print("Error:", error)
-        return error    
+        return error
 
-    def make_exec(self, absolute_path, filename, content):
-        self.make_file_and_write_in(absolute_path, filename, content)
-        self.__run_cmd('sudo chmod +x ' + absolute_path + filename)
-        
-
-    def make_file_and_write_in(self, absolute_path, filename, content=''):
-        command = 'cd / && cd ' + absolute_path + ' && sudo touch ' + filename
-        self.__run_cmd(command)
-        self.__overwrite_text_into_file(content, filename, absolute_path)
-
-    def make_folder(self, absolute_path, name):
+    def make_folder(self, name, absolute_path):
         command = 'sudo mkdir ' + absolute_path + '/' + name
         self.__run_cmd(command) 
 
     def __overwrite_text_into_file(self, text, filename, absolute_path):
-        quoted_text = shlex.quote(text)
-        command = f"cd / && cd {absolute_path} && echo {quoted_text} | sudo tee {filename} >/dev/null"
+        command = 'cd / && ' + 'cd ' + absolute_path + " && echo '" + text + "' | sudo tee " + filename + ' >/dev/null'
         self.__run_cmd(command)
 
     def overwrite_systemd_file(self, filename, content):
