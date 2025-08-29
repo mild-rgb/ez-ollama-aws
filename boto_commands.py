@@ -9,7 +9,7 @@ params = {
                 'Encrypted': False,
                 'DeleteOnTermination': True,
                 'Iops': 3000,
-                'VolumeSize': 15,
+                'VolumeSize': 17,
                 'VolumeType': 'gp3',
                 'Throughput': 125
             }

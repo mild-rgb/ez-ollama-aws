@@ -22,7 +22,7 @@ try:
 	
 	instance_type = "g4dn.xlarge"
 
-	key_name = "jackkey"
+	key_name = "key"
 
 	unique_name = str(time.time())
 	

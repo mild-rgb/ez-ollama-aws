@@ -12,8 +12,8 @@ try:
 	ami_id = jsonhandler.get('ami_id')
 	ebs_id = jsonhandler.get('ebs_id')
 	print(ami_id)
-	instance_type = 'g4dn.xlarge'
-	key_name = "jackkey"
+	instance_type = "g4dn.xlarge" #use a single source of truth for key_name and instance_type
+	key_name = "key"
 	unique_name = str(time.time())
 
 	#turn all of this into a function
@@ -47,7 +47,8 @@ try:
 	sleep(20)
 	
 	print(public_dns_name)
-	
+	public_dns_name = "http:" + public_dns_name + ":3000"
+	webbrowser.open(public_dns_name)
 	input("type anything to close the instance")
 	print(client.terminate_instances(InstanceIds=[instance_id]))
 	response = client.detach_volume(VolumeId=ebs_id,)
@@ -62,7 +63,4 @@ except Exception as e: #terminating container when done
 	print(client.terminate_instances(InstanceIds=[instance_id]))
 	response = client.detach_volume(VolumeId=ebs_id,)
 	print(traceback.format_exc())
-
-		
-	
 
