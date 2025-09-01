@@ -1,7 +1,7 @@
 params = {
-    'ImageId': 'ami-0baccea970769222a',
+    'ImageId': 'ami-01637463b2cbe7cb6',
     'InstanceType': '',
-    'KeyName': 'test',
+    'KeyName': '',
     'BlockDeviceMappings': [
         {
             'DeviceName': '/dev/sda1',

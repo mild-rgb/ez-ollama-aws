@@ -1,3 +1,5 @@
 *.pem
 *.pyc
+*.xml
+*.idea
 /__pycache/*

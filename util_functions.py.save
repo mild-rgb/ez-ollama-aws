@@ -45,13 +45,12 @@ class JsonHandler:
 
 def get_local_ip():
  try:
-    ip = str(get('https://checkip.amazonaws.com').text.strip())
-    ip = ip + "/32"
-    return ip
+ 	ip = str(get('https://checkip.amazonaws.com').text.strip())
+ 	ip = ip + "/32"
+ 	return ip
  except Exception as e:
-    print(e)
-    print("you're not connected to the internet or aws is down")
-
+ 	print(e)
+ 	print("you're not connected to the internet or aws is down")
 
 def get_vpc_id(client, vpc_id=None): #get a specific vpc object if it's available. if it's not, get the default one
     #ec2 = boto3.client('ec2')
@@ -68,13 +67,13 @@ def get_vpc_id(client, vpc_id=None): #get a specific vpc object if it's availabl
                 'Values': ['true']
             }]
         )
-    
+
     vpcs = response.get('Vpcs', [])
-    
+
     if not vpcs:
         print("No VPC found.")
         return None
-    
+
     # Return the VPC ID (or list if you want more details)
     selected_vpc = vpcs[0]  # There should only be one default VPC
     return selected_vpc['VpcId']
@@ -106,7 +105,15 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
             'FromPort': 8080,
             'ToPort': 8080,
             'IpRanges': [{'CidrIp': local_ip}]
+        },
+	 {
+            'IpProtocol': 'tcp',
+            'FromPort': 3000,
+            'ToPort': 3000,
+            'IpRanges': [{'CidrIp': local_ip}]
         }
+
+
     ]
     
     # Authorize the inbound rules on the security group
@@ -147,13 +154,13 @@ def get_security_groups_with_inbound_rule(local_ip, client):
     return security_groups
 
 def create_ebs_disk(client):
-    response = client.create_volume(
-        AvailabilityZone='eu-north-1b',
-        Size=100,
-        VolumeType='gp3',
-    )
-    diskid = response.get('VolumeId')
-    return diskid
+	response = client.create_volume(
+    	AvailabilityZone='eu-north-1b',
+    	Size=100,
+    	VolumeType='gp3',
+	)
+	diskid = response.get('VolumeId')
+	return diskid
 
 
 
@@ -191,9 +198,13 @@ go_to_systemd = 'cd . && cd ../../etc/systemd/system'
 
 docker_newloc = """
 {
-  "data-root": "/home/ubuntu/mnt/docker" 
+  "data-root": "/home/ubuntu/mnt/docker_stuff" 
 }
 """
+
+ebs_id = ''
+
+ami_id = ''
 
 automountscript = """#!/bin/bash
 device="/dev/$(lsblk -ndo NAME,SIZE | grep '100G' | awk '{print $1}')p1"
@@ -253,6 +264,12 @@ Environment="OLLAMA_MODELS=/home/ubuntu/mnt/ollama_stuff"
 [Install]
 WantedBy=default.target"""
 
+#this really should be a singleton tho 
+#class AWSSetup:
+#	def __init__(self, keyname):
+
+
+#maybe i should make this a singleton. maybe it might be helpful to be able to handle commands on two objects. maybe this something that i made in my spare time and can't be bothered to learn oop patterns for 
 
 class RunCMD:
     def __init__(self, sshclient):
