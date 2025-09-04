@@ -14,7 +14,7 @@ try:
     ami_id = jsonhandler.get('ami_id')
     ebs_id = jsonhandler.get('ebs_id')
     print(ami_id)
-    instance_type = "g4dn.xlarge" #use a single source of truth for key_name and instance_type
+    instance_type = "g4dn.xlarge" #use a single source of truth for key_name and instance_type. e.g config.json
     key_name = "key"
     unique_name = str(time.time())
 
@@ -60,10 +60,10 @@ try:
 
 
 except KeyboardInterrupt:
-    response = client.detach_volume(VolumeId=ebs_id, )
+    print(client.detach_volume(VolumeId=ebs_id,))
     print(client.terminate_instances(InstanceIds=[instance_id]))
 except Exception as e: #terminating container when done
-    response = client.detach_volume(VolumeId=ebs_id,)
+    print(client.detach_volume(VolumeId=ebs_id,))
     print(client.terminate_instances(InstanceIds=[instance_id]))
     print(traceback.format_exc())
 

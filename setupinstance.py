@@ -125,19 +125,21 @@ try:
 
     run_cmd.make_exec('/home/ubuntu/scripts/', 'mountscript.sh', automountscript)
 
+    run_cmd.execute('sudo touch /home/ubuntu/scripts/mounted')
+
     run_cmd.make_file_and_write_in('/etc/systemd/system/', 'automount.service', automount)
 
     run_cmd.make_file_and_write_in('/etc/systemd/system/', 'startui.service' , startui)
 
     run_cmd.execute('sudo systemctl daemon-reload')
 
-    run_cmd.exec_until_no_error('sudo systemctl start startui.service')
-
-    run_cmd.execute('sudo systemctl start automount.service')
+    run_cmd.execute('sudo bash /home/ubuntu/scripts/startuiscript.sh')
 
     run_cmd.execute('sudo systemctl enable startui.service')
 
     run_cmd.execute('sudo systemctl enable automount.service')
+
+    run_cmd.execute('sudo rm /home/ubuntu/scripts/mounted')
 
     client.detach_volume(
         VolumeId=ebs_id,

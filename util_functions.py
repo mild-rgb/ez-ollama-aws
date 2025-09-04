@@ -99,7 +99,7 @@ def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
             'IpProtocol': 'tcp',
             'FromPort': 22,
             'ToPort': 22,
-            'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+            'IpRanges': [{'CidrIp': local_ip}]
         },
         {
             'IpProtocol': 'tcp',
@@ -206,7 +206,16 @@ fi
 """
 
 startuiscript = """#!/bin/bash
-systemctl restart docker.service && docker run -d --network=host -v open-webui:/app/backend/data -e OLLAMA_BASE_URL=http://127.0.0.1:11434 --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+while [ ! -e "/home/ubuntu/scripts/mounted" ]; do
+  echo "Waiting for disk to mount"
+  sleep 
+done
+systemctl restart docker.service && docker run -d --network=host \
+  -v open-webui:/app/backend/data \
+  -e OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  --name open-webui \
+  --restart always \
+  ghcr.io/open-webui/open-webui:main
 """
 
 
