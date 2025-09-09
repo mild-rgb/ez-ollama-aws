@@ -8,20 +8,9 @@ import shlex
 
 
 class JsonHandler:
-    _instance = None
-
-    def __new__(cls, filename="values.json"):
-        if cls._instance is None:
-            cls._instance = super(JsonHandler, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self, filename="data.json"):
-        if self._initialized:
-            return  # Avoid reinitializing on repeated calls
+    def __init__(self, filename):
         self.filename = filename
         self.data = self._load_data()
-        self._initialized = True
 
     def _load_data(self):
         if os.path.exists(self.filename):
@@ -30,6 +19,9 @@ class JsonHandler:
                     return json.load(f)
             except json.JSONDecodeError:
                 return {}
+            except FileNotFoundError:
+                with open(self.filename, "w") as f:
+                    json.dump({}, f)
         return {}
 
     def _save_data(self):
@@ -43,108 +35,126 @@ class JsonHandler:
         self.data[key] = value
         self._save_data() 
 
-def get_local_ip():
- try:
-    ip = str(get('https://checkip.amazonaws.com').text.strip())
-    ip = ip + "/32"
-    return ip
- except Exception as e:
-    print(e)
-    print("you're not connected to the internet or aws is down")
+
+#turn all of these into a class
 
 
-def get_vpc_id(client, vpc_id=None): #get a specific vpc object if it's available. if it's not, get the default one
-    #ec2 = boto3.client('ec2')
-    # If a VPC ID is provided, describe that specific VPC
-    if vpc_id:
-        response = client.describe_vpcs(
-            VpcIds=[vpc_id]
+class AWSNetworkManager:
+    def __init__(self, client):
+        self.client = client
+
+    def _get_security_groups_with_inbound_rule(self, local_ip, client):
+        security_groups = []
+        next_token = None
+        while True:
+            params = {
+                'Filters': [
+                    {
+                        'Name': 'ip-permission.cidr',
+                        'Values': [local_ip]
+                    }
+                ],
+                'MaxResults': 1000  # maximum number of results per request
+            }
+            if next_token:
+                params['NextToken'] = next_token  # loop through describe_security_groups
+
+            response = self.client.describe_security_groups(**params)
+            print(response)
+            security_groups.extend(response['SecurityGroups'])
+
+            next_token = response.get('NextToken')
+            if not next_token:
+                break
+
+        return security_groups
+
+    def _create_and_configure_security_group(self, unique_name, vpc_id, local_ip, client):
+
+        # Create the security group with a description and a friendly name
+        response = self.client.create_security_group(
+            Description='Security group allowing SSH and custom TCP traffic',
+            GroupName=unique_name,
+            VpcId=vpc_id
         )
-    else:
-        # Otherwise, get the default VPC by filtering on is-default = true
-        response = client.describe_vpcs(
-            Filters=[{
-                'Name': 'is-default',
-                'Values': ['true']
-            }]
+
+        # Extract the security group ID from the response
+        security_group_id = response['GroupId']
+        print(f"Security Group Created {security_group_id} in VPC {vpc_id}")
+
+        # defining the inbound rules to allow ssh on port 22 and custom TCP on port 8080
+        ip_permissions = [
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 22,
+                'ToPort': 22,
+                'IpRanges': [{'CidrIp': local_ip}]
+            },
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 8080,
+                'ToPort': 8080,
+                'IpRanges': [{'CidrIp': local_ip}]
+            }
+        ]
+
+        # Authorize the inbound rules on the security group
+        client.authorize_security_group_ingress(
+            GroupId=security_group_id,
+            IpPermissions=ip_permissions
         )
-    
-    vpcs = response.get('Vpcs', [])
-    
-    if not vpcs:
-        print("No VPC found.")
-        return None
-    
-    # Return the VPC ID (or list if you want more details)
-    selected_vpc = vpcs[0]  # There should only be one default VPC
-    return selected_vpc['VpcId']
-    
-    
-def create_and_configure_security_group(unique_name, vpc_id, local_ip, client):
-    
-    # Create the security group with a description and a friendly name
-    response = client.create_security_group(
-        Description='Security group allowing SSH and custom TCP traffic',
-        GroupName=unique_name,
-        VpcId=vpc_id
-    )
-    
-    # Extract the security group ID from the response
-    security_group_id = response['GroupId']
-    print(f"Security Group Created {security_group_id} in VPC {vpc_id}")
-    
-    # defining the inbound rules to allow ssh on port 22 and custom TCP on port 8080
-    ip_permissions = [
-        {
-            'IpProtocol': 'tcp',
-            'FromPort': 22,
-            'ToPort': 22,
-            'IpRanges': [{'CidrIp': local_ip}]
-        },
-        {
-            'IpProtocol': 'tcp',
-            'FromPort': 8080,
-            'ToPort': 8080,
-            'IpRanges': [{'CidrIp': local_ip}]
-        }
-    ]
-    
-    # Authorize the inbound rules on the security group
-    client.authorize_security_group_ingress(
-        GroupId=security_group_id,
-        IpPermissions=ip_permissions
-    )
-    print("Inbound rules for SSH and custom TCP added.")
-    
-    return security_group_id
+        print("Inbound rules for SSH and custom TCP added.")
 
+        return security_group_id
 
-def get_security_groups_with_inbound_rule(local_ip, client):
-    security_groups = []
-    next_token = None
+    def _get_local_ip(self):
+        try:
+            ip = str(get('https://checkip.amazonaws.com').text.strip())
+            ip = ip + "/32"
+            return ip
+        except Exception as e:
+            print(e)
+            print("you're not connected to the internet or aws is down")
 
-    while True:
-        params = {
-            'Filters': [
-                {
-                    'Name': 'ip-permission.cidr',
-                    'Values': [local_ip]
-                }
-            ],
-            'MaxResults': 1000  # maximum number of results per request
-        }
-        if next_token:
-            params['NextToken'] = next_token #loop through describe_security_groups 
+    def _get_vpc_id(self, vpc_id=None):  # get a specific vpc object if it's available. if it's not, get the default one
+        # If a VPC ID is provided, describe that specific VPC
+        if vpc_id:
+            response = self.client.describe_vpcs(
+                VpcIds=[vpc_id]
+            )
+        else:
+            # Otherwise, get the default VPC by filtering on is-default = true
+            response = self.client.describe_vpcs(
+                Filters=[{
+                    'Name': 'is-default',
+                    'Values': ['true']
+                }]
+            )
 
-        response = client.describe_security_groups(**params)
-        print(response)
-        security_groups.extend(response['SecurityGroups'])
+        vpcs = response.get('Vpcs', [])
 
-        next_token = response.get('NextToken')
-        if not next_token:
-            break
+        if not vpcs:
+            print("No VPC found.")
+            return None
 
-    return security_groups
+        # Return the VPC ID (or list if you want more details)
+        selected_vpc = vpcs[0]  # There should only be one default VPC
+        return selected_vpc['VpcId']
+
+    def get_security_group(self, vpc_id=None):
+        local_ip = self._get_local_ip()
+        security_group_list = self._get_security_groups_with_inbound_rule(local_ip, self.client)
+        print(len(security_group_list))
+        if len(security_group_list) == 0:
+            print("length was 0")
+            id = self._get_vpc_id(vpc_id)
+            unique_name = str(time.time())
+            security_group_id = self._create_and_configure_security_group(unique_name, id, local_ip, self.client)
+        else:
+            print("length was 1")
+            security_group_id = security_group_list[0]['GroupId']
+        return security_group_id
+
 
 def create_ebs_disk(client):
     response = client.create_volume(
@@ -154,114 +164,6 @@ def create_ebs_disk(client):
     )
     diskid = response.get('VolumeId')
     return diskid
-
-
-
-format_and_mount =  """
-DEVICE=/dev/$(lsblk | grep '100G' | awk '{print $1}')&&
-sudo udevadm settle &&
-sleep 5 &&
-sudo wipefs -af $DEVICE &&
-sudo parted --script $DEVICE mklabel gpt mkpart primary ext4 0% 100% &&
-sudo partprobe $DEVICE &&
-sleep 2 &&
-sudo mkfs.ext4 ${DEVICE}p1 &&
-sudo mkdir -p /home/ubuntu/mnt &&
-sudo mount ${DEVICE}p1 /home/ubuntu/mnt
-"""
-
-
-install_ollama = 'curl -fsSL https://ollama.com/install.sh | sh'
-
-install_docker = """sudo apt-get update && \
-sudo apt-get install -y ca-certificates curl && \
-sudo install -m 0755 -d /etc/apt/keyrings && \
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
-sudo chmod a+r /etc/apt/keyrings/docker.asc && \
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-https://download.docker.com/linux/ubuntu \
-$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-sudo apt-get update && \
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-"""
-
-
-go_to_systemd = 'cd . && cd ../../etc/systemd/system'
-
-docker_newloc = """
-{
-  "data-root": "/home/ubuntu/mnt/docker" 
-}
-"""
-
-automountscript = """#!/bin/bash
-device="/dev/$(lsblk -ndo NAME,SIZE | grep '100G' | awk '{print $1}')p1"
-# Check if the device is mounted
-if findmnt -nr -o target -S "$device" > /dev/null; then
-    exit 0
-else
-    mount "$device" /home/ubuntu/mnt && touch /home/ubuntu/scripts/mounted
-fi
-"""
-
-startuiscript = """#!/bin/bash
-while [ ! -e "/home/ubuntu/scripts/mounted" ]; do
-  echo "Waiting for disk to mount"
-  sleep 
-done
-systemctl restart docker.service && docker run -d --network=host \
-  -v open-webui:/app/backend/data \
-  -e OLLAMA_BASE_URL=http://127.0.0.1:11434 \
-  --name open-webui \
-  --restart always \
-  ghcr.io/open-webui/open-webui:main
-"""
-
-
-automount = """
-[Unit]
-Description=Mount Device Script
-After=network.target
-
-[Service]
-ExecStart=/home/ubuntu/scripts/mountscript.sh
-Restart=on-failure
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-"""
-startui = """
-[Unit]
-Description=start ui script
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/ubuntu/scripts/startuiscript.sh
-
-[Install]
-WantedBy=multi-user.target
-"""
-
-ollama_service = """
-[Unit]
-Description=Ollama Service
-After=network-online.target
-
-[Service]
-ExecStart=/usr/local/bin/ollama serve
-User=ollama
-Group=ollama
-Restart=always
-RestartSec=3
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-Environment="OLLAMA_MODELS=/home/ubuntu/mnt/ollama_stuff"
-
-[Install]
-WantedBy=default.target"""
-
 
 class RunCMD:
     def __init__(self, sshclient):

@@ -14,7 +14,7 @@ Run [Ollama](https://ollama.ai) + [Open WebUI](https://github.com/open-webui/ope
 
 ### Prerequisites  
 - An **AWS account**  
-- Access to **G-series GPU cores** (request from AWS if needed)  
+- Access to **G-series CPU instances** (request from AWS)  
 - A locally stored **AWS keypair (`.pem`)**  
 
 ### Setup (first run)  
@@ -54,13 +54,12 @@ When finished, just stop the instance from your terminal and it will detach the 
 - **Infra:** AWS EC2 G-series GPU instances, EBS for persistent storage  
 
 ## Roadmap  
-- [ ] Abstract EC2 + EBS orchestration into a proper Python library  
-- [ ] Add CLI args (`--instance-type`, `--region`, `--model`)  
+- [ ] Abstract EC2 + EBS orchestration into a proper Python library
 - [ ] Cost monitoring / auto-shutdown helpers  
 
 ## Security Notes  
-- SSH (`22/tcp`) is currently open to **0.0.0.0/0** in setup. Restrict to your own IP for safety.  
 - API keys or AWS credentials should be handled via **environment variables** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).  
+- Connections are made over HTTP. Anyone on your network can see everything/recieve 
 
 ## License  
 This project is licensed under the [MIT License](LICENSE).  

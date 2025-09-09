@@ -1,47 +1,36 @@
-import json
-import requests
 import traceback
-import boto3
-import time
 from paramiko import SSHClient
 import paramiko
 from time import sleep
 from util_functions import *
+from commands import *
 from setupparams import params
 instance_id = ''
-user_input = ''
-security_group_id = ''
-resource = boto3.resource('ec2', region_name = 'eu-north-1')
-client = boto3.client('ec2', region_name = 'eu-north-1')
-jsonhandler = JsonHandler()
+configjsonhandler = JsonHandler("base_config.json")
+datajsonhandler = JsonHandler("data.json")
+resource = boto3.resource('ec2', region_name = configjsonhandler.get("region"))
+client = boto3.client('ec2', region_name = configjsonhandler.get("region"))
+networkmanager = AWSNetworkManager(client)
+
 try:
 
-    #configs - make these be taken through cmd line
+    instance_type = configjsonhandler.get("instance_type")
 
-    #startinstance
+    key_name = configjsonhandler.get("key_name")
 
-    instance_type = "g4dn.xlarge"
+    image_id = configjsonhandler.get("base_ami_id")
 
-    key_name = "key"
+    #investigate iams
 
-    unique_name = str(time.time())
+    security_group_id = networkmanager.get_security_group()
 
-    local_ip = get_local_ip()
+    exit()
 
-    print(local_ip)
-
-    security_group_list = get_security_groups_with_inbound_rule(local_ip, client)
-    if len(security_group_list) == 0:
-        vpc_id = get_vpc_id(client)
-        security_group_id = create_and_configure_security_group(unique_name, vpc_id, local_ip, client)
-    else:
-        security_group_id = security_group_list[0]['GroupId']
-
-
-    params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
+    params['TagSpecifications'][0]['Tags'][0]['Value'] = str(time.time())
     params['NetworkInterfaces'][0]['Groups'] = [security_group_id]
     params['InstanceType'] = instance_type
     params['KeyName'] = key_name
+    params['ImageId'] = image_id
 
 
     instance = resource.create_instances(**params)
@@ -156,7 +145,7 @@ try:
 
     response = client.create_image(
         InstanceId=instance_id,
-            Name=unique_name,
+            Name=str(time.time()),
             Description='Baked AMI from instance',
             NoReboot=False  # Set to False if you want to ensure file system consistency
     )
@@ -168,9 +157,8 @@ try:
 
     print(ebs_id)
 
-    jsonhandler.set('ami_id', ami_id)
-
-    jsonhandler.set('ebs_id', ebs_id)
+    datajsonhandler.set('ami_id', ami_id)
+    datajsonhandler.set('ebs_id', ebs_id)
 
     while True:
         response = client.describe_images(ImageIds=[ami_id])

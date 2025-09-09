@@ -1,5 +1,5 @@
 params = {
-    'ImageId': 'ami-05d3e0186c058c4dd',
+    'ImageId': '',
     'InstanceType': '',
     'KeyName': 'key',
     'BlockDeviceMappings': [

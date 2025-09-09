@@ -1,4 +1,5 @@
-from params import *
+from setupinstance import networkmanager
+from setupparams import params
 from util_functions import *
 import traceback
 from time import sleep
@@ -6,23 +7,25 @@ import webbrowser
 
 resource = boto3.resource('ec2', region_name = 'eu-north-1')
 client = boto3.client('ec2', region_name = 'eu-north-1')
+networkmanager = AWSNetworkManager(client)
 instance_id=''
 ebs_id = ''
 
 try: 
-    jsonhandler = JsonHandler()
-    ami_id = jsonhandler.get('ami_id')
-    ebs_id = jsonhandler.get('ebs_id')
+    base_config = JsonHandler('base_config.json')
+    data = JsonHandler('data.json')
+    ami_id = data.get('ami_id')
+    ebs_id = data.get('ebs_id')
     print(ami_id)
-    instance_type = "g4dn.xlarge" #use a single source of truth for key_name and instance_type. e.g config.json
-    key_name = "key"
+    instance_type = base_config.get("instance_type")
+    key_name = base_config.get("key_name")
     unique_name = str(time.time())
 
     #turn all of this into a function
     local_ip = get_local_ip()
 
     vpc_id = get_vpc_id(client)
-    security_group_id = create_and_configure_security_group(unique_name, vpc_id, local_ip, client)
+    security_group_id = networkmanager.create_and_configure_security_group(unique_name, vpc_id, local_ip, client)
 
     params['ImageId'] = ami_id
     params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
@@ -46,7 +49,7 @@ try:
         VolumeId = ebs_id
     )
     print("mounted disk")
-    sleep(20)
+    sleep(70)
 
     print(public_dns_name)
     public_dns_name = "http:" + public_dns_name + ":8080"

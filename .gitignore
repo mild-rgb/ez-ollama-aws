@@ -3,4 +3,5 @@ README*.md
 *.pyc
 *.xml
 *.idea
+data.json
 /__pycache/*

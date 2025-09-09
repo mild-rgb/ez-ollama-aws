@@ -1,0 +1,5 @@
+{"base_ami_id":  "ami-05d3e0186c058c4dd",
+  "region": "eu-north-1",
+  "key_name": "key",
+  "instance_type": "g4dn.xlarge"
+}
