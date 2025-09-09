@@ -18,13 +18,17 @@ Run [Ollama](https://ollama.ai) + [Open WebUI](https://github.com/open-webui/ope
 - A locally stored **AWS keypair (`.pem`)**  
 
 ### Setup (first run)  
-1) Create an AWS account [https://signin.aws.amazon.com/signup?request_type=register]
-2) Request access to G-series instances [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html]
-2) Create a key pair and download it []https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html. Place the .pem file in the project folder. If the key name is not 'key', change the 'key_name' field in base_config.json to match. 
-4) ```bash
+1) ```bash
+   git clone https://github.com/mild-rgb/ez-ollama-aws
+   cd ez-ollama-aws
+   pip install requirements.txt```
+2) Create an AWS account [https://signin.aws.amazon.com/signup?request_type=register]
+3) Request access to G-series instances [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html]
+4) Create a key pair and download it []https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html. Place the .pem file in the project folder. If the key name is not 'key', change the 'key_name' field in base_config.json to match. 
+5) ```bash
        python3 setupinstance.py
    ```
-5) Wait for setupinstance.py to finish running. It will print 'AMI is ready!' when it is done
+6) Wait for setupinstance.py to finish running. It will print 'AMI is ready!' when it is done
 
 
 This will:  
