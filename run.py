@@ -1,9 +1,8 @@
-from setupinstance import networkmanager
+import traceback
+import webbrowser
+from time import sleep
 from setupparams import params
 from util_functions import *
-import traceback
-from time import sleep
-import webbrowser
 
 resource = boto3.resource('ec2', region_name = 'eu-north-1')
 client = boto3.client('ec2', region_name = 'eu-north-1')
@@ -11,7 +10,8 @@ networkmanager = AWSNetworkManager(client)
 instance_id=''
 ebs_id = ''
 
-try: 
+try:
+    print("running run")
     base_config = JsonHandler('base_config.json')
     data = JsonHandler('data.json')
     ami_id = data.get('ami_id')
@@ -22,10 +22,7 @@ try:
     unique_name = str(time.time())
 
     #turn all of this into a function
-    local_ip = get_local_ip()
-
-    vpc_id = get_vpc_id(client)
-    security_group_id = networkmanager.create_and_configure_security_group(unique_name, vpc_id, local_ip, client)
+    security_group_id = networkmanager.get_security_group()
 
     params['ImageId'] = ami_id
     params['TagSpecifications'][0]['Tags'][0]['Value'] = unique_name
@@ -49,6 +46,7 @@ try:
         VolumeId = ebs_id
     )
     print("mounted disk")
+    print("waiting for instance to be ready")
     sleep(70)
 
     print(public_dns_name)

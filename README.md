@@ -14,15 +14,18 @@ Run [Ollama](https://ollama.ai) + [Open WebUI](https://github.com/open-webui/ope
 
 ### Prerequisites  
 - An **AWS account**  
-- Access to **G-series CPU instances** (request from AWS)  
+- Access to **G-series CPU instances** (request from AWS at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html)  
 - A locally stored **AWS keypair (`.pem`)**  
 
 ### Setup (first run)  
-Run the setup script to bake an AMI with Ollama, Docker, and Open WebUI preinstalled:  
+1) Create an AWS account [https://signin.aws.amazon.com/signup?request_type=register]
+2) Request access to G-series instances [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html]
+2) Create a key pair and download it []https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html. Place the .pem file in the project folder. If the key name is not 'key', change the 'key_name' field in base_config.json to match. 
+4) ```bash
+       python3 setupinstance.py
+   ```
+5) Wait for setupinstance.py to finish running. It will print 'AMI is ready!' when it is done
 
-```bash
-python setupinstance.py
-```  
 
 This will:  
 - Launch a GPU-backed EC2 instance  
@@ -32,12 +35,10 @@ This will:
 - Pull your first model (`gemma3:12b` by default)  
 - Save the generated **AMI ID** and **EBS volume ID** in `values.json`  
 
-### Start (subsequent runs)  
-To start using your environment after setup:  
-
-```bash
-python startinstance.py
-```  
+### Use (after setup)
+1) ```bash 
+      python3 run.py
+   ```
 
 This will:  
 - Launch a new instance from the saved AMI  
@@ -59,8 +60,7 @@ When finished, just stop the instance from your terminal and it will detach the 
 
 ## Security Notes  
 - API keys or AWS credentials should be handled via **environment variables** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).  
-- Connections are made over HTTP. Anyone on your network can see everything/recieve 
-
+- Connections are made over HTTP. Anyone on your network can see everything you send/recieve
 ## License  
 This project is licensed under the [MIT License](LICENSE).  
 

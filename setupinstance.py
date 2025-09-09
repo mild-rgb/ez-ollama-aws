@@ -13,6 +13,7 @@ client = boto3.client('ec2', region_name = configjsonhandler.get("region"))
 networkmanager = AWSNetworkManager(client)
 
 try:
+    print("running setupinstance")
 
     instance_type = configjsonhandler.get("instance_type")
 
@@ -24,7 +25,6 @@ try:
 
     security_group_id = networkmanager.get_security_group()
 
-    exit()
 
     params['TagSpecifications'][0]['Tags'][0]['Value'] = str(time.time())
     params['NetworkInterfaces'][0]['Groups'] = [security_group_id]
