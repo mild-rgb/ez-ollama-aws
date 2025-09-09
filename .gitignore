@@ -1,5 +1,4 @@
 *.pem
-README*.md
 *.pyc
 *.xml
 *.idea
