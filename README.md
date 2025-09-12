@@ -59,7 +59,7 @@ When finished, just stop the instance from your terminal and it will detach the 
 - **Infra:** AWS EC2 G-series GPU instances, EBS for persistent storage  
 
 ## Roadmap  
-- [ ] Abstract EC2 + EBS orchestration into a proper Python library
+- [ ] HTTPS? as shown in [https://docs.openwebui.com/tutorials/https-nginx/]
 - [ ] Cost monitoring / auto-shutdown helpers  
 
 ## Security Notes  
