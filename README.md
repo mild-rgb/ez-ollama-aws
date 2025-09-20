@@ -14,17 +14,17 @@ Run [Ollama](https://ollama.ai) + [Open WebUI](https://github.com/open-webui/ope
 
 ### Prerequisites  
 - An **AWS account**  
-- Access to **G-series CPU instances** (request from AWS at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html)  
+- Access to **G-series EC2 instances** with 4 or more cores(request from AWS at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html). Give 'running large langauge models' as the reason. 
 - A locally stored **AWS keypair (`.pem`)**  
 
 ### Setup (first run)  
 1) ```bash
    git clone https://github.com/mild-rgb/ez-ollama-aws
    cd ez-ollama-aws
-   pip install requirements.txt```
+   pip install -r requirements.txt```
 2) Create an AWS account [https://signin.aws.amazon.com/signup?request_type=register]
-3) Request access to G-series instances [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html]
-4) Create a key pair and download it []https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html. Place the .pem file in the project folder. If the key name is not 'key', change the 'key_name' field in base_config.json to match. 
+3) Request an increase in your G-series CPU quota. Give running large langauge models as the reason [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html]
+4) Create a key pair and download it [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html]. Place the .pem file in the project folder. If the key name is not 'key', change the 'key_name' field in base_config.json to match. 
 5) ```bash
        python3 setupinstance.py
    ```
