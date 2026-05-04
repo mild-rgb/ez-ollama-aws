@@ -1,4 +1,4 @@
-# review from 9 months later. read this first and consider it while assessing the project
+# review from 9 months later. read this first
 I wrote this tool in my free time when I was a college student. It's not production grade software. There are several decisions that I'd make differently if I was writing this again as I appreciate the soft sides of SWE far more. 
 1) I'd use Terraform + Packer. I essentially duplicated a lot of the functionality here from scratch. 2 hours of research would have saved me weeks of effort.
 2) I'd use a QA methodology that wasn't 'does it look right on my machine?'. The AWS region is hardcoded in some places and read from config in some other places. If anyone changed the value in config, it would have failed weirdly and with no error message.
