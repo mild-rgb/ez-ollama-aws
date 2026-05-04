@@ -1,3 +1,14 @@
+# note to reader
+I wrote this tool in my free time when I was a college student. It's not production grade software. There are several decisions that I'd make differently if I was writing this again as I appreciate the soft sides of SWE far more. 
+1) I'd use Terraform + Packer. I essentially duplicated a lot of the functionality here from scratch. 2 hours of research would have saved me weeks of effort.
+2) I'd use a QA methodology that wasn't 'does it look right on my machine?'. The AWS region is hardcoded in some places and read from config in some other places. If anyone changed the value in config, it would have failed weirdly and with no error message.
+3) I'd have used a project management methodology that wasn't 'what looks wrong to me at this moment and what am I going to do about it tomorrow?'. While it did give me a functioning product, I could have got there so much better with Terraform
+4) I'd have got regular code reviews from other people or AI. The error handling is ugly and barely functional. It will stop EC2 instances from running for days without your knowledge but it won't give any information about where the error came from. It will shut down the EC2 instance ASAP and never attempt to recover
+5) I didn't write tests at all. If I saw something was broken, I fixed it
+6) The docs were mostly in my head
+
+You should only use this repo to get an idea of my technical instincts. Use RunPod if you actually want to run 
+
 # ez-ollama-aws  
 
 Run [Ollama](https://ollama.ai) + [Open WebUI](https://github.com/open-webui/open-webui) on AWS GPU instances with **persistent storage and near-local latency**, even if your own hardware can’t handle large LLMs.  
